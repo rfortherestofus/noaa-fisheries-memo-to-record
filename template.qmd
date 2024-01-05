@@ -1,16 +1,22 @@
 ---
-title: Untitled
 format:
   noaa-fisheries-memo-to-record-docx: default
-author: David Keyes
-date: last-modified
 ---
 
-## Introduction
+Update the content below.
 
-*TODO* Create an example file that demonstrates the formatting and features of your format.
+**DATE:** December xx, 2022
 
-## More Information
+**MEMORANDUM FOR:**
 
-You can learn more about controlling the appearance of Word output here: <https://quarto.org/docs/output-formats/ms-word.html>
+ROC LTO Consultation
+
+ARN# 151422-WCR2016-SA00300
+
+**FROM:** Barbara Byrne
+
+**SUBJECT:** East Side Division Effects 
+
+**ASSOCIATED DOCUMENTS OR DATA FILES:**
+
 
