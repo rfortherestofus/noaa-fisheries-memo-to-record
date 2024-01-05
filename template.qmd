@@ -5,17 +5,13 @@ format:
 
 Update the content below.
 
-**DATE:** December xx, 2022
+**DATE:** 
 
 **MEMORANDUM FOR:**
 
-ROC LTO Consultation
+**FROM:** 
 
-ARN# 151422-WCR2016-SA00300
-
-**FROM:** Barbara Byrne
-
-**SUBJECT:** East Side Division Effects 
+**SUBJECT:** 
 
 **ASSOCIATED DOCUMENTS OR DATA FILES:**
 
