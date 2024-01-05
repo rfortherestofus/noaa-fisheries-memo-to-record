@@ -6,7 +6,7 @@ To generate a new Memo to Record Quarto file, first make sure you are working in
 
 Next, identify your terminal:
 
-![](rstudio-terminal.png)
+![](assets/rstudio-terminal.png)
 
 Then, click terminal and run this command at the prompt:
  
