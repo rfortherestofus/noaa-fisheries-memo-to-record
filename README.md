@@ -2,40 +2,19 @@
 
 This is a template for a NOAA Fisheries Memo to Record in Quarto. 
 
-To generate a new Memo to Record Quarto file, first make sure you are working in an RStudio project. 
+## Installation (Simple Method)
 
-Next, identify your terminal:
+To install, the package first install the `noaafisherieswcr` package from GitHub:
 
-![](_extensions/assets/rstudio-terminal.png)
-
-Then, click terminal and run this command at the prompt:
- 
-```bash
-quarto use template rfortherestofus/noaa-fisheries-memo-to-record
-```
-This will install the extension. You will be asked whether you trust the authors of the template. Type Y and hit enter.
-
-```bash
-? Do you trust the authors of this template (Y/n)
+```r  
+remotes::install_github("rfortherestofus/noaafisherieswcr")
 ```
 
-Next, you will be asked to create a directory where your new Quarto file will be placed. Type a name and hit enter.
+From there, you can run the following code in the console to create a new Memo to Record Quarto file:
 
-```bash
-? Directory name: › 
+```r
+library(noaafisherieswcr)
+create_new_memo_to_record()
 ```
 
-The Quarto template will be installed, at which point you can go into the directory you created and find a Quarto file that you can use as a starting place for your memo. 
-
-You can add any content you want to this Quarto file before rendering it, which will create a Word document that you can then edit as you see fit. You can also move the Quarto file that was created to a different location you want (e.g. not in a separate directory).
-
-You can also create new Quarto files in the same RStudio project. To do so, just create a new Quarto file and then replace the default YAML with this:
-
-```yaml
----
-format:
-  noaa-fisheries-memo-to-record-docx: default
----
-```
-
-From there, add any content and render and your Word document will follow the template.
+This will create a new Quarto file that you can use as a starting place for your memo. You can edit or add any content you want to this Quarto file before rendering it, which will create a Word document that you can then edit as you see fit. 

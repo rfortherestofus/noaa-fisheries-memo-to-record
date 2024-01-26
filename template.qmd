@@ -119,7 +119,19 @@ jpe_data_preliminary |>
 jpe_data_final |>
     select(-timing) |>
     rename(`Final Value` = value) |>
-    noaa_table()
+    noaa_table() |>
+     colformat_double(
+        i = c(1, 5, 6, 7, 10, 11),
+        j = 2,
+        digits = 0,
+        big.mark = ","
+    ) |>
+    colformat_double(
+        i = c(2, 3, 4, 8, 9),
+        j = 2,
+        digits = 5,
+        big.mark = ","
+    )
 ```
 
 
