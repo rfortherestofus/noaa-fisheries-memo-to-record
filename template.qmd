@@ -1,6 +1,5 @@
 ---
-format:
-  noaa-fisheries-memo-to-record-docx: default
+format: noaa-fisheries-memo-to-record-docx
 execute: 
   echo: false
   warning: false
@@ -9,8 +8,6 @@ knitr:
   opts_chunk: 
     dev: ragg_png
     dpi: 300
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r}
@@ -20,6 +17,97 @@ library(scales)
 library(noaafisherieswcr)
 library(janitor)
 ```
+
+```{r}
+noaa_table <-
+  function(df) {
+    df |>
+      flextable::flextable() |>
+      flextable::font(fontname = "Times New Roman",
+           part = "all") |>
+      flextable::fontsize(size = 12) |>
+      flextable::theme_zebra() |>
+      flextable::autofit()
+  }
+```
+
+
+```{r}
+survival_by_year <- 
+  read_csv("_extensions/noaa-fisheries-memo-to-record/survival_by_year.csv")
+
+vwm <- function(s, V) { # function for variance-weighted mean
+  inv.var <- 1 / V # survival rate and the variance of that
+  w <- inv.var / sum(inv.var) # survival rate
+  s.mean <- sum(s * w)
+  s.var <- 1 / sum(inv.var)
+  
+  list(
+    surv = s.mean,
+    v.surv = s.var
+  )
+}
+
+calculate_jpe_data <- function(
+    JPI,
+    V.JPI,
+    timing
+) {
+  
+  f.hat <- 0.4946
+  V.f <- 0.006719416
+  
+  z <- survival_by_year
+  
+  ## Natural-origin
+  s.nat <- z$surv.salt.sac # CJS-estimated surv rates (salt-sac)
+  V.s.nat <- z$SE.salt.sac^2 # variances of s.nat
+  
+  s.nat.mean <- vwm(s.nat, V.s.nat)$surv
+  s.nat.var <- vwm(s.nat, V.s.nat)$v.surv
+  round.s.nat.mean <- round(s.nat.mean, 4) # force to 4 digits after decimal
+  
+  ## Hatchery-origin
+  s.hat <- z$surv.redding.sac # CJS-estimated surv rates (redding-sac)
+  V.s.hat <- z$SE.redding.sac^2 # variances of s.hat
+  
+  s.hat.mean <- vwm(s.hat, V.s.hat)$surv
+  s.hat.var <- vwm(s.hat, V.s.hat)$v.surv
+  
+  ## ==============================================================================
+  ## Forecast natural-origin JPE
+  
+  JPE <- JPI * f.hat * round(s.nat.mean, 4) # JPE forecast
+  # enforce 4 sig digits for surv rate
+  
+  V.JPE <- (JPI^2 - V.JPI) * # JPE variance (Gray 1999)
+    ((f.hat^2 * s.nat.var) + (round.s.nat.mean^2 * V.f) - (V.f * s.nat.var)) +
+    (f.hat^2 * round.s.nat.mean^2 * V.JPI)
+  
+  sd.JPE <- sqrt(V.JPE) # JPE standard deviation
+  
+  lci <- JPE - (1.96 * sd.JPE) # lower 95% confidence interval
+  uci <- JPE + (1.96 * sd.JPE) # upper 95% confidence interval
+  
+  tibble::tibble(
+    JPI = JPI,
+    `natural surv rate` = round(s.nat.mean, 4),
+    `V natural surv rate` = s.nat.var,
+    f.hat = round(f.hat, 4),
+    JPE = round(JPE, 0),
+    `V JPE` = round(V.JPE),
+    `sd JPE` = round(sd.JPE),
+    `hatchery surv rate` = round(s.hat.mean, 4),
+    `V hatchery surv rate` = s.hat.var,
+    `JPE lower 95% CI` = round(lci, 0),
+    `JPE upper 95% CI` = round(uci, 0)
+  ) |>
+    tidyr::pivot_longer(cols = tidyr::everything(),
+                        names_to = "Variable") |>
+    dplyr::mutate(timing = timing)
+}
+```
+
 
 ```{r}
 options(scipen = 999)
@@ -48,44 +136,45 @@ options(scipen = 999)
 
 [TODO]
 
+
 ```{r}
 jpe_data_preliminary <-
-    calculate_jpe_data(
-        JPI = 278448,
-        V.JPI = 280340342,
-        timing = "Preliminary"
-    )
+  calculate_jpe_data(
+    JPI = 278448,
+    V.JPI = 280340342,
+    timing = "Preliminary"
+  )
 
 jpe_data_final <-
-    calculate_jpe_data(
-        JPI = 311058,
-        V.JPI = 452638929,
-        timing = "Final"
-    )
+  calculate_jpe_data(
+    JPI = 311058,
+    V.JPI = 452638929,
+    timing = "Final"
+  )
 
 jpe_data_preliminary |>
-    bind_rows(jpe_data_final) |>
-    pivot_wider(
-        id_cols = Variable,
-        names_from = timing,
-        values_from = value
-    ) |>
-    filter(Variable %in% c(
-        "f.hat",
-        "natural surv rate",
-        "JPI",
-        "JPE",
-        "JPE lower 95% CI",
-        "JPE upper 95% CI"
-    )) |>
-    # slice(2, 1, 3, 4, 5) |> # Change if you want to reorder rows
-    noaa_table() |>
-    colformat_double(
-        i = c(1, 4, 5, 6),
-        j = c(2, 3),
-        digits = 0,
-        big.mark = ","
-    )
+  bind_rows(jpe_data_final) |>
+  pivot_wider(
+    id_cols = Variable,
+    names_from = timing,
+    values_from = value
+  ) |>
+  filter(Variable %in% c(
+    "f.hat",
+    "natural surv rate",
+    "JPI",
+    "JPE",
+    "JPE lower 95% CI",
+    "JPE upper 95% CI"
+  )) |>
+  # slice(2, 1, 3, 4, 5) |> # Change if you want to reorder rows
+  noaa_table() |> 
+  colformat_double(
+    i = c(1, 4, 5, 6),
+    j = c(2, 3),
+    digits = 0,
+    big.mark = ","
+  )
 ```
 
 
@@ -93,28 +182,25 @@ jpe_data_preliminary |>
 
 [^1]: The Juvenile Production Estimate (JPE) reported here, and implemented in the package WCR.Fisheries.xxxx (available at <NMFS internal github>), uses the "Method 2" approach described in O'Farrell et al. 2018. Staff at the NOAA Fisheries Southwest Fisheries Science Center provide the latest estimates each year for outmigration survival (Arnold Amman) and the fry-to-smolt survival rate (Michael O'Farrell). O’Farrell M. R., W. H. Satterthwaite, A. N. Hendrix, and M. S. Mohr. 2018. Alternative Juvenile Production Estimate (JPE) forecast approaches for Sacramento River winter-run Chinook Salmon. San Francisco Estuary & Watershed Science 16(4):4.  https://doi.org/10.15447/sfews.2018v16iss4art4
 
-
-
-
 ### Preliminary estimate
 
 ```{r}
 jpe_data_preliminary |>
-    select(-timing) |>
-    rename(`Preliminary Value` = value) |>
-    noaa_table() |>
-    colformat_double(
-        i = c(1, 5, 6, 7, 10, 11),
-        j = 2,
-        digits = 0,
-        big.mark = ","
-    ) |>
-    colformat_double(
-        i = c(2, 4, 8, 9),
-        j = 2,
-        digits = 4,
-        big.mark = ","
-    )
+  select(-timing) |>
+  rename(`Preliminary Value` = value) |>
+  noaa_table() |>
+  colformat_double(
+    i = c(1, 5, 6, 7, 10, 11),
+    j = 2,
+    digits = 0,
+    big.mark = ","
+  ) |>
+  colformat_double(
+    i = c(2, 4, 8, 9),
+    j = 2,
+    digits = 4,
+    big.mark = ","
+  )
 ```
 
 
@@ -122,21 +208,21 @@ jpe_data_preliminary |>
 
 ```{r}
 jpe_data_final |>
-    select(-timing) |>
-    rename(`Final Value` = value) |>
-    noaa_table() |>
-    colformat_double(
-        i = c(1, 5, 6, 7, 10, 11),
-        j = 2,
-        digits = 0,
-        big.mark = ","
-    ) |>
-    colformat_double(
-        i = c(2, 4, 8, 9),
-        j = 2,
-        digits = 4,
-        big.mark = ","
-    )
+  select(-timing) |>
+  rename(`Final Value` = value) |>
+  noaa_table() |>
+  colformat_double(
+    i = c(1, 5, 6, 7, 10, 11),
+    j = 2,
+    digits = 0,
+    big.mark = ","
+  ) |>
+  colformat_double(
+    i = c(2, 4, 8, 9),
+    j = 2,
+    digits = 4,
+    big.mark = ","
+  )
 ```
 
 
@@ -144,57 +230,57 @@ jpe_data_final |>
 
 ```{r}
 survival_by_year_tidy <-
-    survival_by_year |>
-    pivot_longer(cols = -year) |>
-    separate_wider_delim(
-        name,
-        delim = ".",
-        names = c(
-            "measure",
-            "location",
-            "region"
-        )
-    ) |>
-    filter(measure != "SE") |>
-    mutate(location = str_to_title(location)) |>
-    mutate(year = as.character(year))
+  survival_by_year |>
+  pivot_longer(cols = -year) |>
+  separate_wider_delim(
+    name,
+    delim = ".",
+    names = c(
+      "measure",
+      "location",
+      "region"
+    )
+  ) |>
+  filter(measure != "SE") |>
+  mutate(location = str_to_title(location)) |>
+  mutate(year = as.character(year))
 ```
 
 
 ```{r}
 #| fig-height: 7
 survival_by_year_tidy |>
-    ggplot(aes(
-        x = year,
-        y = value,
-        group = location
-    )) +
-    geom_col() +
-    scale_y_continuous(
-        labels = percent_format()
-    ) +
-    facet_wrap(
-        vars(location),
-        ncol = 1
-    ) +
-    labs(title = "Survival Rate by Location") +
-    theme_minimal(
-        base_family = "Arial",
-        base_size = 12
-    ) +
-    theme(
-        axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        axis.text = element_text(size = 10),
-        plot.title = element_text(
-            size = 16,
-            face = "bold"
-        ),
-        plot.title.position = "plot",
-        panel.spacing = unit(50, "pt"),
-        strip.text = element_text(
-            hjust = 0,
-            size = 12
-        )
+  ggplot(aes(
+    x = year,
+    y = value,
+    group = location
+  )) +
+  geom_col() +
+  scale_y_continuous(
+    labels = percent_format()
+  ) +
+  facet_wrap(
+    vars(location),
+    ncol = 1
+  ) +
+  labs(title = "Survival Rate by Location") +
+  theme_minimal(
+    base_family = "Arial",
+    base_size = 12
+  ) +
+  theme(
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text = element_text(size = 10),
+    plot.title = element_text(
+      size = 16,
+      face = "bold"
+    ),
+    plot.title.position = "plot",
+    panel.spacing = unit(50, "pt"),
+    strip.text = element_text(
+      hjust = 0,
+      size = 12
     )
+  )
 ```
