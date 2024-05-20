@@ -14,7 +14,6 @@ knitr:
 library(tidyverse)
 library(flextable)
 library(scales)
-library(noaafisherieswcr)
 library(janitor)
 ```
 
